@@ -1,6 +1,3 @@
-# index.html
-
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -339,7 +336,7 @@ Registro guardado
 <script type="module">
 
 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
   getAuth,
@@ -347,8 +344,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
 
@@ -366,7 +362,7 @@ const firebaseConfig = {
 
 };
 
-
+const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 window.registrar = async () => {
@@ -799,30 +795,3 @@ if(localStorage.getItem("dark")==="true"){
 
 </body>
 </html>
-```
-
-# Cómo subirlo
-
-1. Guarda el archivo como:
-
-```text
-index.html
-```
-
-2. Súbelo a tu repositorio en:
-
-urlGitHub[https://github.com/](https://github.com/)
-
-3. Ve a:
-
-Settings → Pages
-
-4. Selecciona:
-
-* Deploy from branch
-* main
-* /root
-
-5. Guarda.
-
-Tu checador quedará publicado automáticamente.
