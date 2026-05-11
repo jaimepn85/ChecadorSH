@@ -117,6 +117,36 @@ input,select{
   color:white;
 }
 
+.iconbtn{
+  background:var(--card);
+  border:1px solid var(--border);
+  color:var(--text);
+  padding:10px;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:0.2s;
+}
+
+.iconbtn:hover{
+  background:var(--border);
+}
+
+.logoutbtn{
+  color:#DC2626;
+  background:#FEF2F2;
+  border-color:#FCA5A5;
+}
+
+body.dark .logoutbtn{
+  background:#7F1D1D;
+  border-color:#991B1B;
+  color:#FECACA;
+}
+
 .tabs{
   display:flex;
   gap:10px;
@@ -248,16 +278,16 @@ Crear cuenta
 
 <div class="container">
 
-<h1>Checador Pro</h1>
-<p class="sub">Registro semanal de trabajo</p>
-
-<button class="btn darkbtn" onclick="toggleDark()">
-Tema Oscuro
-</button>
-
-<button class="btn deletebtn" onclick="logout()">
-Cerrar Sesión
-</button>
+<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+  <div>
+    <h1 style="margin-bottom:2px;">Checador Pro</h1>
+    <p class="sub" style="margin-bottom:0;">Registro semanal de trabajo</p>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button class="iconbtn" onclick="toggleDark()" title="Alternar Tema Oscuro">🌙</button>
+    <button class="iconbtn logoutbtn" onclick="logout()" title="Cerrar Sesión">🚪</button>
+  </div>
+</div>
 
 <div class="tabs">
   <button class="tab active" onclick="showTab('registro',event)">Registrar</button>
