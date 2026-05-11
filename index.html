@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checador Pro</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+<div id="loginBox" class="card">
+
+<h2>Iniciar sesión</h2>
+
+<input
+  type="email"
+  id="email"
+  placeholder="Correo">
+
+<input
+  type="password"
+  id="password"
+  placeholder="Contraseña">
+
+<button class="btn primary" onclick="login()">
+Entrar
+</button>
+
+<button class="btn" onclick="registrar()">
+Crear cuenta
+</button>
+
+</div>
+
+<div id="app" style="display:none">
+
+<style>
+:root{
+  --primary:#534AB7;
+  --bg:#F3F4F6;
+  --card:#FFFFFF;
+  --text:#111827;
+  --text2:#6B7280;
+  --border:#E5E7EB;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  padding:20px;
+  transition:.3s;
+}
+
+body.dark{
+  --bg:#111827;
+  --card:#1F2937;
+  --text:#F9FAFB;
+  --text2:#D1D5DB;
+  --border:#374151;
+}
+
+.container{
+  max-width:700px;
+  margin:auto;
+}
+
+h1{
+  font-size:30px;
+  color:var(--text);
+  margin-bottom:5px;
+}
+
+.sub{
+  color:var(--text2);
+  margin-bottom:20px;
+}
+
+.tabs{
+  display:flex;
+  gap:10px;
+  margin-bottom:20px;
+}
+
+.tab{
+  flex:1;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  background:#DDD6FE;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.tab.active{
+  background:var(--primary);
+  color:white;
+}
+
+.section{
+  display:none;
+}
+
+.section.show{
+  display:block;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px;
+  margin-bottom:15px;
+}
+
+label{
+  display:block;
+  margin:12px 0 5px;
+  color:var(--text2);
+}
+
+input,select{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--text);
+  font-size:15px;
+}
+
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.btn{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  font-size:15px;
+  font-weight:bold;
+  cursor:pointer;
+  margin-top:10px;
+}
+
+.primary{
+  background:var(--primary);
+  color:white;
+}
+
+.whatsapp{
+  background:#25D366;
+  color:white;
+}
+
+.pdf{
+  background:#DC2626;
+  color:white;
+}
+
+.darkbtn{
+  background:#111827;
+  color:white;
+}
+
+.deletebtn{
+  background:#991B1B;
+  color:white;
+}
+
+.statgrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:15px;
+}
+
+.stat{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px;
+  text-align:center;
+}
+
+.stat h2{
+  color:var(--text);
+  font-size:24px;
+}
+
+.stat p{
+  color:var(--text2);
+  margin-top:5px;
+}
+
+.day{
+  border-bottom:1px solid var(--border);
+  padding:14px 0;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.day:last-child{
+  border:none;
+}
+
+.dayname{
+  font-weight:bold;
+  color:var(--text);
+}
+
+.dayinfo{
+  color:var(--text2);
+  font-size:13px;
+  margin-top:2px;
+}
+
+.success{
+  background:#DCFCE7;
+  color:#166534;
+  padding:12px;
+  border-radius:10px;
+  text-align:center;
+  margin-top:10px;
+  display:none;
+}
+
+.smallbtn{
+  margin-top:8px;
+  background:#DC2626;
+  color:white;
+  border:none;
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:12px;
+}
+
+@media(max-width:600px){
+  .row,.statgrid{
+    grid-template-columns:1fr;
+  }
+
+  .day{
+    flex-direction:column;
+  }
+}
+
+
+
+</style>
+</head>
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+
+  apiKey: "TU_API_KEY",
+
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+
+  projectId: "TU_PROYECTO",
+
+  storageBucket: "TU_PROYECTO.appspot.com",
+
+  messagingSenderId: "XXXXXXXX",
+
+  appId: "APP_ID"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+window.registrar = async function(){
+
+  const email =
+    document.getElementById("email").value;
+
+  const pass =
+    document.getElementById("password").value;
+
+  try{
+
+    await createUserWithEmailAndPassword(
+      auth,
+      email,
+      pass
+    );
+
+    alert("Usuario creado");
+
+  }catch(e){
+
+    alert(e.message);
+
+  }
+
+}
+
+window.login = async function(){
+
+  const email =
+    document.getElementById("email").value;
+
+  const pass =
+    document.getElementById("password").value;
+
+  try{
+
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      pass
+    );
+
+    alert("Bienvenido");
+
+  }catch(e){
+
+    alert(e.message);
+
+  }
+
+}
+
+window.logout = async function(){
+
+  await signOut(auth);
+
+}
+
+onAuthStateChanged(auth,(user)=>{
+
+  if(user){
+
+    document.getElementById("loginBox")
+    .style.display="none";
+
+    document.getElementById("app")
+    .style.display="block";
+
+  }else{
+
+    document.getElementById("loginBox")
+    .style.display="block";
+
+    document.getElementById("app")
+    .style.display="none";
+
+  }
+
+});
+
+</script>
+<body>
+
+<div class="container">
+
+<h1>Checador Pro</h1>
+<p class="sub">Registro semanal de trabajo</p>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('registro',event)">Registrar</button>
+  <button class="tab" onclick="showTab('semana',event)">Semana</button>
+  <button class="tab" onclick="showTab('config',event)">Config</button>
+</div>
+
+<!-- REGISTRO -->
+
+<div class="section show" id="registro">
+
+<div class="card">
+
+<label>Día</label>
+
+<select id="dia">
+<option>Lunes</option>
+<option>Martes</option>
+<option>Miércoles</option>
+<option>Jueves</option>
+<option>Viernes</option>
+<option>Sábado</option>
+<option>Domingo</option>
+</select>
+
+<label>Fecha</label>
+<input type="date" id="fecha">
+
+<div class="row">
+
+<div>
+<label>Entrada</label>
+<input type="time" id="entrada" value="08:00">
+</div>
+
+<div>
+<label>Salida</label>
+<input type="time" id="salida" value="17:00">
+</div>
+
+</div>
+
+<label>Comida (minutos)</label>
+<input type="number" id="comida" value="30">
+
+<label>Préstamo</label>
+<input type="number" id="prestamo" value="0">
+
+<button class="btn primary" onclick="guardarDia()">
+Guardar Día
+</button>
+
+<div class="success" id="ok">
+Registro guardado
+</div>
+
+</div>
+
+</div>
+
+<!-- SEMANA -->
+
+<div class="section" id="semana">
+
+<div id="contenidoSemana"></div>
+
+</div>
+
+<!-- CONFIG -->
+
+<div class="section" id="config">
+
+<div class="card">
+
+<label>Pago por hora</label>
+<input type="number" id="horaPago" value="60">
+
+<button class="btn darkbtn" onclick="toggleDark()">
+Tema Oscuro
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+let registros = JSON.parse(localStorage.getItem("registros")) || [];
+
+let pagoHora = localStorage.getItem("pagoHora") || 60;
+
+document.getElementById("horaPago").value = pagoHora;
+
+document.getElementById("fecha").value =
+new Date().toISOString().split('T')[0];
+
+function showTab(tab,e){
+
+  document.querySelectorAll(".tab")
+  .forEach(t=>t.classList.remove("active"));
+
+  document.querySelectorAll(".section")
+  .forEach(s=>s.classList.remove("show"));
+
+  e.target.classList.add("active");
+
+  document.getElementById(tab)
+  .classList.add("show");
+
+  if(tab==="semana"){
+    renderSemana();
+  }
+
+}
+
+function guardarDia(){
+
+  const dia=document.getElementById("dia").value;
+
+  const fecha=document.getElementById("fecha").value;
+
+  const entrada=document.getElementById("entrada").value;
+
+  const salida=document.getElementById("salida").value;
+
+  const comida=parseInt(document.getElementById("comida").value)||0;
+
+  const prestamo=parseFloat(document.getElementById("prestamo").value)||0;
+
+  const [eh,em]=entrada.split(":").map(Number);
+
+  const [sh,sm]=salida.split(":").map(Number);
+
+  let min=((sh*60)+sm)-((eh*60)+em);
+
+  min-=comida;
+
+  if(min<0){
+    alert("Horario inválido");
+    return;
+  }
+
+  const reg={
+    dia,
+    fecha,
+    entrada,
+    salida,
+    comida,
+    prestamo,
+    min
+  };
+
+  const idx=registros.findIndex(r=>r.dia===dia);
+
+  if(idx>=0){
+    registros[idx]=reg;
+  }else{
+    registros.push(reg);
+  }
+
+  localStorage.setItem("registros",JSON.stringify(registros));
+
+  document.getElementById("ok").style.display="block";
+
+  setTimeout(()=>{
+    document.getElementById("ok").style.display="none";
+  },2000);
+
+}
+
+function fmtHoras(min){
+
+  const h=Math.floor(min/60);
+
+  const m=min%60;
+
+  return `${h}h ${m}min`;
+
+}
+
+function renderSemana(){
+
+  pagoHora=parseFloat(document.getElementById("horaPago").value)||60;
+
+  localStorage.setItem("pagoHora",pagoHora);
+
+  let totalMin=0;
+
+  let totalPrestamo=0;
+
+  registros.forEach(r=>{
+    totalMin+=r.min;
+    totalPrestamo+=r.prestamo;
+  });
+
+  const horas=totalMin/60;
+
+  const extras=Math.max(horas-48,0);
+
+  const normales=Math.min(horas,48);
+
+  const total=
+  (normales*pagoHora)+
+  (extras*(pagoHora*2));
+
+  const neto=total-totalPrestamo;
+
+  let html=`
+
+  <div class="statgrid">
+
+  <div class="stat">
+    <h2>${fmtHoras(totalMin)}</h2>
+    <p>Horas</p>
+  </div>
+
+  <div class="stat">
+    <h2>${extras.toFixed(1)}h</h2>
+    <p>Extras</p>
+  </div>
+
+  <div class="stat">
+    <h2>$${Math.round(total)}</h2>
+    <p>Total</p>
+  </div>
+
+  <div class="stat">
+    <h2>$${Math.round(neto)}</h2>
+    <p>Neto</p>
+  </div>
+
+  </div>
+
+  <div class="card">
+
+  `;
+
+  registros.forEach(r=>{
+
+    const pago=Math.round((r.min/60)*pagoHora);
+
+    html+=`
+
+    <div class="day">
+
+      <div>
+
+        <div class="dayname">${r.dia}</div>
+
+        <div class="dayinfo">
+          📅 ${r.fecha}
+        </div>
+
+        <div class="dayinfo">
+          ${r.entrada} - ${r.salida}
+        </div>
+
+        <div class="dayinfo">
+          Trabajado: ${fmtHoras(r.min)}
+        </div>
+
+        <div class="dayinfo">
+          Comida: ${r.comida}min
+        </div>
+
+        ${r.prestamo>0 ? `
+        <div class="dayinfo">
+          Prestado: $${r.prestamo}
+        </div>
+        ` : ''}
+
+      </div>
+
+      <div>
+
+        <div class="dayname">
+          $${pago}
+        </div>
+
+        <button
+          class="smallbtn"
+          onclick="eliminarDia('${r.dia}')">
+          Eliminar
+        </button>
+
+      </div>
+
+    </div>
+
+    `;
+
+  });
+
+  html+=`</div>`;
+
+  html+=`
+  <button class="btn whatsapp" onclick="compartirWA()">
+    Compartir WhatsApp
+  </button>
+  `;
+
+  html+=`
+  <button class="btn pdf" onclick="exportPDF()">
+    Exportar PDF
+  </button>
+  `;
+
+  html+=`
+  <button class="btn deletebtn" onclick="borrarTodo()">
+    Borrar Toda la Semana
+  </button>
+  `;
+
+  document.getElementById("contenidoSemana").innerHTML=html;
+
+}
+
+function compartirWA(){
+
+  let totalMin=0;
+  let totalPrestamo=0;
+
+  let txt='';
+
+  txt += `*Registro semana*\n`;
+  txt += `_Pago por hora: $${pagoHora}_\n\n`;
+
+  registros.forEach(r=>{
+
+    totalMin+=r.min;
+    totalPrestamo+=r.prestamo;
+
+    const pago=Math.round((r.min/60)*pagoHora);
+
+    txt+=`*${r.dia}* — ${r.entrada} a ${r.salida}\n`;
+
+    txt+=`Fecha: ${r.fecha}\n`;
+
+    txt+=`Trabajado: ${fmtHoras(r.min)} → $${pago}\n`;
+
+    txt+=`Comida: ${r.comida}min\n`;
+
+    if(r.prestamo>0){
+      txt+=`Prestado: $${r.prestamo}\n`;
+    }
+
+    txt+=`\n---\n\n`;
+
+  });
+
+  const horas=totalMin/60;
+
+  const extras=Math.max(horas-48,0);
+
+  const normales=Math.min(horas,48);
+
+  const total=
+    (normales*pagoHora)+
+    (extras*(pagoHora*2));
+
+  const neto=total-totalPrestamo;
+
+  txt+=`*Total horas:* ${fmtHoras(totalMin)}\n`;
+
+  txt+=`*Total a cobrar:* $${Math.round(total)}\n`;
+
+  txt+=`*Total prestado:* $${Math.round(totalPrestamo)}\n`;
+
+  txt+=`*Neto a recibir:* $${Math.round(neto)}`;
+
+  window.open(
+    "https://wa.me/?text="+encodeURIComponent(txt),
+    "_blank"
+  );
+
+}
+
+async function exportPDF(){
+
+  const {jsPDF}=window.jspdf;
+
+  const doc=new jsPDF();
+
+  let y=20;
+
+  doc.setFontSize(20);
+
+  doc.text("Checador Pro",20,y);
+
+  y+=15;
+
+  registros.forEach(r=>{
+
+    doc.setFontSize(12);
+
+    doc.text(
+      `${r.dia} ${r.fecha}`,
+      20,
+      y
+    );
+
+    y+=7;
+
+    doc.text(
+      `${r.entrada}-${r.salida} ${fmtHoras(r.min)}`,
+      20,
+      y
+    );
+
+    y+=12;
+
+  });
+
+  doc.save("registro.pdf");
+
+}
+
+function eliminarDia(dia){
+
+  if(!confirm("¿Eliminar este día?")){
+    return;
+  }
+
+  registros =
+    registros.filter(r => r.dia !== dia);
+
+  localStorage.setItem(
+    "registros",
+    JSON.stringify(registros)
+  );
+
+  renderSemana();
+
+}
+
+function borrarTodo(){
+
+  if(!confirm("¿Borrar todos los registros?")){
+    return;
+  }
+
+  registros=[];
+
+  localStorage.setItem(
+    "registros",
+    JSON.stringify(registros)
+  );
+
+  renderSemana();
+
+}
+
+function toggleDark(){
+
+  document.body.classList.toggle("dark");
+
+  localStorage.setItem(
+    "dark",
+    document.body.classList.contains("dark")
+  );
+
+}
+
+if(localStorage.getItem("dark")==="true"){
+  document.body.classList.add("dark");
+}
+
+</script>
+
+</body>
+</div>
+</html>
