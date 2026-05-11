@@ -293,57 +293,47 @@
 
       <div class="section show" id="registro">
 
-        <div class="card">
+        <div class="card" id="modo-entrada">
+          <h2 style="text-align:center; margin-bottom:15px; color:var(--text);">¡Bienvenido!</h2>
+          <button class="btn primary" style="padding:20px; font-size:18px;" onclick="checarEntrada()">
+            📍 Registrar Entrada Ahora
+          </button>
+        </div>
 
-          <div class="row" style="margin-bottom:15px;">
-            <button class="btn primary" style="margin-top:0;" onclick="checarEntrada()">📍 Entrada</button>
-            <button class="btn whatsapp" style="margin-top:0; background-color:#10B981;" onclick="checarSalida()">🏁 Salida</button>
-          </div>
-          <hr style="border:0; border-top:1px solid var(--border); margin-bottom:15px;">
-
-          <label>Día</label>
-
-          <select id="dia">
-            <option>Lunes</option>
-            <option>Martes</option>
-            <option>Miércoles</option>
-            <option>Jueves</option>
-            <option>Viernes</option>
-            <option>Sábado</option>
-            <option>Domingo</option>
-          </select>
-
-          <label>Fecha</label>
-          <input type="date" id="fecha">
+        <div class="card" id="modo-salida" style="display:none;">
+          <h2 style="margin-bottom:15px; color:var(--text);">Completar Registro</h2>
+          
+          <input type="hidden" id="dia">
+          <input type="hidden" id="fecha">
 
           <div class="row">
-
             <div>
-              <label>Entrada</label>
-              <input type="time" id="entrada" value="08:00">
+              <label>Entrada (Fija)</label>
+              <input type="time" id="entrada" disabled style="background:var(--bg); opacity:0.8;">
             </div>
-
             <div>
               <label>Salida</label>
               <input type="time" id="salida" value="">
             </div>
-
           </div>
 
           <label>Comida (minutos)</label>
-          <input type="number" id="comida" value="30">
+          <input type="number" id="comida" value="0">
 
           <label>Préstamo</label>
           <input type="number" id="prestamo" value="0">
 
-          <button class="btn primary" onclick="guardarDia()">
-            Guardar Día
+          <button class="btn whatsapp" style="background-color:#10B981;" onclick="guardarDia()">
+            🏁 Guardar Salida y Cerrar Día
+          </button>
+          
+          <button class="btn" style="background:var(--bg); color:var(--text2); margin-top:10px;" onclick="cancelarSalida()">
+            Cancelar
           </button>
 
           <div class="success" id="ok">
             Registro guardado
           </div>
-
         </div>
 
       </div>
@@ -554,7 +544,10 @@
 
       setTimeout(() => {
         document.getElementById("ok").style.display = "none";
-      }, 2000);
+        document.getElementById("modo-salida").style.display = "none";
+        document.getElementById("modo-entrada").style.display = "block";
+        document.querySelectorAll(".tab")[1].click();
+      }, 1000);
 
     }
 
@@ -650,14 +643,24 @@
 
       </div>
 
-      <div>
+      <div style="text-align:right;">
 
-        <div class="dayname">
+        <div class="dayname" style="margin-bottom:5px;">
           $${pago}
         </div>
 
+        ${!r.salida ? `
+          <button
+            class="smallbtn"
+            style="background:#10B981; margin-bottom:5px; display:block; width:100%;"
+            onclick="prepararSalida('${r.dia}')">
+            Registrar Salida
+          </button>
+        ` : ''}
+
         <button
           class="smallbtn"
+          style="display:block; width:100%;"
           onclick="eliminarDia('${r.dia}')">
           Eliminar
         </button>
@@ -792,30 +795,38 @@
       document.getElementById("entrada").value = `${hs}:${ms}`;
       document.getElementById("salida").value = "";
       document.getElementById("comida").value = "0";
+      document.getElementById("prestamo").value = "0";
       
       guardarDia();
+      document.querySelectorAll(".tab")[1].click();
     }
 
-    function checarSalida() {
-      const now = new Date();
-      const days = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
-      const diaStr = days[now.getDay()];
-      
-      document.getElementById("dia").value = diaStr;
-      document.getElementById("fecha").value = now.toISOString().split('T')[0];
-      
+    function prepararSalida(diaStr) {
       const idx = registros.findIndex(r => r.dia === diaStr);
-      if (idx >= 0) {
-        document.getElementById("entrada").value = registros[idx].entrada;
-        document.getElementById("comida").value = registros[idx].comida;
-        document.getElementById("prestamo").value = registros[idx].prestamo;
-      }
+      if (idx < 0) return;
       
+      const reg = registros[idx];
+      document.getElementById("dia").value = reg.dia;
+      document.getElementById("fecha").value = reg.fecha;
+      document.getElementById("entrada").value = reg.entrada;
+      document.getElementById("comida").value = reg.comida;
+      document.getElementById("prestamo").value = reg.prestamo;
+      
+      const now = new Date();
       const hs = String(now.getHours()).padStart(2, '0');
       const ms = String(now.getMinutes()).padStart(2, '0');
       document.getElementById("salida").value = `${hs}:${ms}`;
       
-      guardarDia();
+      document.getElementById("modo-entrada").style.display = "none";
+      document.getElementById("modo-salida").style.display = "block";
+      
+      document.querySelectorAll(".tab")[0].click();
+    }
+
+    function cancelarSalida() {
+      document.getElementById("modo-entrada").style.display = "block";
+      document.getElementById("modo-salida").style.display = "none";
+      document.querySelectorAll(".tab")[1].click();
     }
 
     function eliminarDia(dia) {
