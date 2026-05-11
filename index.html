@@ -1,3 +1,6 @@
+# index.html
+
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -7,8 +10,218 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<style>
+:root{
+  --primary:#534AB7;
+  --bg:#F3F4F6;
+  --card:#FFFFFF;
+  --text:#111827;
+  --text2:#6B7280;
+  --border:#E5E7EB;
+}
 
-<div id="loginBox" class="card">
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  padding:20px;
+}
+
+body.dark{
+  --bg:#111827;
+  --card:#1F2937;
+  --text:#F9FAFB;
+  --text2:#D1D5DB;
+  --border:#374151;
+}
+
+.container{
+  max-width:700px;
+  margin:auto;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px;
+  margin-bottom:15px;
+}
+
+h1{
+  color:var(--text);
+  margin-bottom:5px;
+}
+
+.sub{
+  color:var(--text2);
+  margin-bottom:20px;
+}
+
+label{
+  display:block;
+  margin:12px 0 5px;
+  color:var(--text2);
+}
+
+input,select{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--text);
+}
+
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.btn{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  font-size:15px;
+  font-weight:bold;
+  cursor:pointer;
+  margin-top:10px;
+}
+
+.primary{
+  background:#534AB7;
+  color:white;
+}
+
+.whatsapp{
+  background:#25D366;
+  color:white;
+}
+
+.pdf{
+  background:#DC2626;
+  color:white;
+}
+
+.deletebtn{
+  background:#991B1B;
+  color:white;
+}
+
+.darkbtn{
+  background:#111827;
+  color:white;
+}
+
+.tabs{
+  display:flex;
+  gap:10px;
+  margin-bottom:20px;
+}
+
+.tab{
+  flex:1;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  background:#DDD6FE;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.tab.active{
+  background:#534AB7;
+  color:white;
+}
+
+.section{
+  display:none;
+}
+
+.section.show{
+  display:block;
+}
+
+.statgrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:15px;
+}
+
+.stat{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px;
+  text-align:center;
+}
+
+.stat h2{
+  color:var(--text);
+}
+
+.stat p{
+  color:var(--text2);
+}
+
+.day{
+  border-bottom:1px solid var(--border);
+  padding:14px 0;
+  display:flex;
+  justify-content:space-between;
+}
+
+.day:last-child{
+  border:none;
+}
+
+.dayname{
+  font-weight:bold;
+  color:var(--text);
+}
+
+.dayinfo{
+  color:var(--text2);
+  font-size:13px;
+  margin-top:2px;
+}
+
+.smallbtn{
+  margin-top:8px;
+  background:#DC2626;
+  color:white;
+  border:none;
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:12px;
+}
+
+.success{
+  background:#DCFCE7;
+  color:#166534;
+  padding:12px;
+  border-radius:10px;
+  text-align:center;
+  margin-top:10px;
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="loginBox" class="container">
+
+<div class="card">
 
 <h2>Iniciar sesión</h2>
 
@@ -32,365 +245,28 @@ Crear cuenta
 
 </div>
 
+</div>
+
 <div id="app" style="display:none">
-
-<style>
-:root{
-  --primary:#534AB7;
-  --bg:#F3F4F6;
-  --card:#FFFFFF;
-  --text:#111827;
-  --text2:#6B7280;
-  --border:#E5E7EB;
-}
-
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}
-
-body{
-  font-family:Arial,sans-serif;
-  background:var(--bg);
-  padding:20px;
-  transition:.3s;
-}
-
-body.dark{
-  --bg:#111827;
-  --card:#1F2937;
-  --text:#F9FAFB;
-  --text2:#D1D5DB;
-  --border:#374151;
-}
-
-.container{
-  max-width:700px;
-  margin:auto;
-}
-
-h1{
-  font-size:30px;
-  color:var(--text);
-  margin-bottom:5px;
-}
-
-.sub{
-  color:var(--text2);
-  margin-bottom:20px;
-}
-
-.tabs{
-  display:flex;
-  gap:10px;
-  margin-bottom:20px;
-}
-
-.tab{
-  flex:1;
-  padding:12px;
-  border:none;
-  border-radius:12px;
-  background:#DDD6FE;
-  cursor:pointer;
-  font-weight:bold;
-}
-
-.tab.active{
-  background:var(--primary);
-  color:white;
-}
-
-.section{
-  display:none;
-}
-
-.section.show{
-  display:block;
-}
-
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:18px;
-  margin-bottom:15px;
-}
-
-label{
-  display:block;
-  margin:12px 0 5px;
-  color:var(--text2);
-}
-
-input,select{
-  width:100%;
-  padding:12px;
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:var(--card);
-  color:var(--text);
-  font-size:15px;
-}
-
-.row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.btn{
-  width:100%;
-  padding:14px;
-  border:none;
-  border-radius:12px;
-  font-size:15px;
-  font-weight:bold;
-  cursor:pointer;
-  margin-top:10px;
-}
-
-.primary{
-  background:var(--primary);
-  color:white;
-}
-
-.whatsapp{
-  background:#25D366;
-  color:white;
-}
-
-.pdf{
-  background:#DC2626;
-  color:white;
-}
-
-.darkbtn{
-  background:#111827;
-  color:white;
-}
-
-.deletebtn{
-  background:#991B1B;
-  color:white;
-}
-
-.statgrid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-bottom:15px;
-}
-
-.stat{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:20px;
-  text-align:center;
-}
-
-.stat h2{
-  color:var(--text);
-  font-size:24px;
-}
-
-.stat p{
-  color:var(--text2);
-  margin-top:5px;
-}
-
-.day{
-  border-bottom:1px solid var(--border);
-  padding:14px 0;
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-}
-
-.day:last-child{
-  border:none;
-}
-
-.dayname{
-  font-weight:bold;
-  color:var(--text);
-}
-
-.dayinfo{
-  color:var(--text2);
-  font-size:13px;
-  margin-top:2px;
-}
-
-.success{
-  background:#DCFCE7;
-  color:#166534;
-  padding:12px;
-  border-radius:10px;
-  text-align:center;
-  margin-top:10px;
-  display:none;
-}
-
-.smallbtn{
-  margin-top:8px;
-  background:#DC2626;
-  color:white;
-  border:none;
-  padding:6px 10px;
-  border-radius:8px;
-  cursor:pointer;
-  font-size:12px;
-}
-
-@media(max-width:600px){
-  .row,.statgrid{
-    grid-template-columns:1fr;
-  }
-
-  .day{
-    flex-direction:column;
-  }
-}
-
-
-
-</style>
-</head>
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-// Import the functions you need from the SDKs you need
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBg3JLnLSiHH4vQqNRTdfl7TAXkGDxR6Ts",
-  authDomain: "checador-sh.firebaseapp.com",
-  projectId: "checador-sh",
-  storageBucket: "checador-sh.firebasestorage.app",
-  messagingSenderId: "1074509664672",
-  appId: "1:1074509664672:web:6248902b297aa7709754c5",
-  measurementId: "G-PS6J3DMJGD"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-const app = initializeApp(firebaseConfig);
-
-const auth = getAuth(app);
-
-window.registrar = async function(){
-
-  const email =
-    document.getElementById("email").value;
-
-  const pass =
-    document.getElementById("password").value;
-
-  try{
-
-    await createUserWithEmailAndPassword(
-      auth,
-      email,
-      pass
-    );
-
-    alert("Usuario creado");
-
-  }catch(e){
-
-    alert(e.message);
-
-  }
-
-}
-
-window.login = async function(){
-
-  const email =
-    document.getElementById("email").value;
-
-  const pass =
-    document.getElementById("password").value;
-
-  try{
-
-    await signInWithEmailAndPassword(
-      auth,
-      email,
-      pass
-    );
-
-    alert("Bienvenido");
-
-  }catch(e){
-
-    alert(e.message);
-
-  }
-
-}
-
-window.logout = async function(){
-
-  await signOut(auth);
-
-}
-
-onAuthStateChanged(auth,(user)=>{
-
-  if(user){
-
-    document.getElementById("loginBox")
-    .style.display="none";
-
-    document.getElementById("app")
-    .style.display="block";
-
-  }else{
-
-    document.getElementById("loginBox")
-    .style.display="block";
-
-    document.getElementById("app")
-    .style.display="none";
-
-  }
-
-});
-
-</script>
-<body>
 
 <div class="container">
 
 <h1>Checador Pro</h1>
 <p class="sub">Registro semanal de trabajo</p>
 
+<button class="btn darkbtn" onclick="toggleDark()">
+Tema Oscuro
+</button>
+
+<button class="btn deletebtn" onclick="logout()">
+Cerrar Sesión
+</button>
+
 <div class="tabs">
   <button class="tab active" onclick="showTab('registro',event)">Registrar</button>
   <button class="tab" onclick="showTab('semana',event)">Semana</button>
   <button class="tab" onclick="showTab('config',event)">Config</button>
 </div>
-
-<!-- REGISTRO -->
 
 <div class="section show" id="registro">
 
@@ -443,32 +319,138 @@ Registro guardado
 
 </div>
 
-<!-- SEMANA -->
-
 <div class="section" id="semana">
-
 <div id="contenidoSemana"></div>
-
 </div>
-
-<!-- CONFIG -->
 
 <div class="section" id="config">
 
 <div class="card">
-
 <label>Pago por hora</label>
 <input type="number" id="horaPago" value="60">
-
-<button class="btn darkbtn" onclick="toggleDark()">
-Tema Oscuro
-</button>
+</div>
 
 </div>
 
 </div>
 
 </div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+
+  apiKey: "AIzaSyBg3JLnLSiHH4vQqNRTdfl7TAXkGDxR6Ts",
+
+  authDomain: "checador-sh.firebaseapp.com",
+
+  projectId: "checador-sh",
+
+  storageBucket: "checador-sh.appspot.com",
+
+  messagingSenderId: "1074509664672",
+
+  appId: "1:1074509664672:web:6248902b297aa7709754c5"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+window.registrar = async () => {
+
+  const email =
+    document.getElementById("email").value;
+
+  const password =
+    document.getElementById("password").value;
+
+  try {
+
+    await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    alert("Usuario creado");
+
+  } catch (e) {
+
+    alert(e.message);
+
+  }
+
+};
+
+window.login = async () => {
+
+  const email =
+    document.getElementById("email").value;
+
+  const password =
+    document.getElementById("password").value;
+
+  try {
+
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    alert("Bienvenido");
+
+  } catch (e) {
+
+    alert(e.message);
+
+  }
+
+};
+
+window.logout = async () => {
+
+  await signOut(auth);
+
+};
+
+onAuthStateChanged(auth, (user) => {
+
+  if(user){
+
+    document.getElementById("loginBox")
+      .style.display = "none";
+
+    document.getElementById("app")
+      .style.display = "block";
+
+  } else {
+
+    document.getElementById("loginBox")
+      .style.display = "block";
+
+    document.getElementById("app")
+      .style.display = "none";
+
+  }
+
+});
+
+</script>
 
 <script>
 
@@ -503,19 +485,13 @@ function showTab(tab,e){
 function guardarDia(){
 
   const dia=document.getElementById("dia").value;
-
   const fecha=document.getElementById("fecha").value;
-
   const entrada=document.getElementById("entrada").value;
-
   const salida=document.getElementById("salida").value;
-
   const comida=parseInt(document.getElementById("comida").value)||0;
-
   const prestamo=parseFloat(document.getElementById("prestamo").value)||0;
 
   const [eh,em]=entrada.split(":").map(Number);
-
   const [sh,sm]=salida.split(":").map(Number);
 
   let min=((sh*60)+sm)-((eh*60)+em);
@@ -558,7 +534,6 @@ function guardarDia(){
 function fmtHoras(min){
 
   const h=Math.floor(min/60);
-
   const m=min%60;
 
   return `${h}h ${m}min`;
@@ -572,7 +547,6 @@ function renderSemana(){
   localStorage.setItem("pagoHora",pagoHora);
 
   let totalMin=0;
-
   let totalPrestamo=0;
 
   registros.forEach(r=>{
@@ -581,9 +555,7 @@ function renderSemana(){
   });
 
   const horas=totalMin/60;
-
   const extras=Math.max(horas-48,0);
-
   const normales=Math.min(horas,48);
 
   const total=
@@ -619,7 +591,6 @@ function renderSemana(){
   </div>
 
   <div class="card">
-
   `;
 
   registros.forEach(r=>{
@@ -649,12 +620,6 @@ function renderSemana(){
         <div class="dayinfo">
           Comida: ${r.comida}min
         </div>
-
-        ${r.prestamo>0 ? `
-        <div class="dayinfo">
-          Prestado: $${r.prestamo}
-        </div>
-        ` : ''}
 
       </div>
 
@@ -720,25 +685,15 @@ function compartirWA(){
     const pago=Math.round((r.min/60)*pagoHora);
 
     txt+=`*${r.dia}* — ${r.entrada} a ${r.salida}\n`;
-
     txt+=`Fecha: ${r.fecha}\n`;
-
     txt+=`Trabajado: ${fmtHoras(r.min)} → $${pago}\n`;
-
     txt+=`Comida: ${r.comida}min\n`;
-
-    if(r.prestamo>0){
-      txt+=`Prestado: $${r.prestamo}\n`;
-    }
-
     txt+=`\n---\n\n`;
 
   });
 
   const horas=totalMin/60;
-
   const extras=Math.max(horas-48,0);
-
   const normales=Math.min(horas,48);
 
   const total=
@@ -748,11 +703,8 @@ function compartirWA(){
   const neto=total-totalPrestamo;
 
   txt+=`*Total horas:* ${fmtHoras(totalMin)}\n`;
-
   txt+=`*Total a cobrar:* $${Math.round(total)}\n`;
-
   txt+=`*Total prestado:* $${Math.round(totalPrestamo)}\n`;
-
   txt+=`*Neto a recibir:* $${Math.round(neto)}`;
 
   window.open(
@@ -804,10 +756,6 @@ async function exportPDF(){
 
 function eliminarDia(dia){
 
-  if(!confirm("¿Eliminar este día?")){
-    return;
-  }
-
   registros =
     registros.filter(r => r.dia !== dia);
 
@@ -821,10 +769,6 @@ function eliminarDia(dia){
 }
 
 function borrarTodo(){
-
-  if(!confirm("¿Borrar todos los registros?")){
-    return;
-  }
 
   registros=[];
 
@@ -855,5 +799,31 @@ if(localStorage.getItem("dark")==="true"){
 </script>
 
 </body>
-</div>
 </html>
+```
+
+# Cómo subirlo
+
+1. Guarda el archivo como:
+
+```text
+index.html
+```
+
+2. Súbelo a tu repositorio en:
+
+urlGitHub[https://github.com/](https://github.com/)
+
+3. Ve a:
+
+Settings → Pages
+
+4. Selecciona:
+
+* Deploy from branch
+* main
+* /root
+
+5. Guarda.
+
+Tu checador quedará publicado automáticamente.
