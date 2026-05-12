@@ -243,10 +243,48 @@
       margin-top: 10px;
       display: none;
     }
+
+    /* Loading overlay */
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      display: none;
+    }
+    #loadingOverlay span {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 14px;
+      font-weight: bold;
+      color: #534AB7;
+      font-size: 16px;
+    }
+    body.dark #loadingOverlay span {
+      background: #1F2937;
+      color: #a5b4fc;
+    }
+
+    /* Sync status badge */
+    #syncStatus {
+      font-size: 12px;
+      color: var(--text2);
+      text-align: center;
+      margin-top: 6px;
+    }
+    #syncStatus.synced { color: #16a34a; }
+    #syncStatus.syncing { color: #d97706; }
+    #syncStatus.error { color: #dc2626; }
   </style>
 </head>
 
 <body>
+
+  <!-- Loading overlay -->
+  <div id="loadingOverlay"><span>⏳ Cargando...</span></div>
 
   <div id="loginBox" class="container">
 
@@ -278,6 +316,7 @@
         <div>
           <h1 style="margin-bottom:2px;">Checador SH</h1>
           <p class="sub" style="margin-bottom:0;">Registro semanal de trabajo</p>
+          <div id="syncStatus">⏳ Iniciando...</div>
         </div>
         <div style="display:flex; gap:8px;">
           <button class="iconbtn" onclick="toggleDark()" title="Alternar Tema Oscuro">🌙</button>
@@ -332,7 +371,7 @@
           </button>
 
           <div class="success" id="ok">
-            Registro guardado
+            Registro guardado ✅
           </div>
         </div>
 
@@ -347,6 +386,9 @@
         <div class="card">
           <label>Pago por hora</label>
           <input type="number" id="horaPago" value="60">
+          <button class="btn primary" onclick="guardarConfig()" style="margin-top:12px;">
+            💾 Guardar configuración
+          </button>
         </div>
 
       </div>
@@ -355,8 +397,8 @@
 
   </div>
 
+  <!-- ===== FIREBASE AUTH MODULE ===== -->
   <script type="module">
-
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
@@ -368,138 +410,209 @@
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+    import {
+      getFirestore,
+      collection,
+      doc,
+      setDoc,
+      deleteDoc,
+      onSnapshot,
+      getDoc,
+      setDoc as fsSetDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
     const firebaseConfig = {
-
       apiKey: "AIzaSyBg3JLnLSiHH4vQqNRTdfl7TAXkGDxR6Ts",
-
       authDomain: "checador-sh.firebaseapp.com",
-
       projectId: "checador-sh",
-
       storageBucket: "checador-sh.appspot.com",
-
       messagingSenderId: "1074509664672",
-
       appId: "1:1074509664672:web:6248902b297aa7709754c5"
-
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
+    let unsubscribeListener = null;
+
+    // ---- Auth ----
     window.registrar = async () => {
-
-      const email =
-        document.getElementById("email").value;
-
-      const password =
-        document.getElementById("password").value;
-
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
       try {
-
-        await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-
+        await createUserWithEmailAndPassword(auth, email, password);
         alert("Usuario creado");
-
       } catch (e) {
-
         alert(e.message);
-
       }
-
     };
 
     window.login = async () => {
-
-      const email =
-        document.getElementById("email").value;
-
-      const password =
-        document.getElementById("password").value;
-
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
       try {
-
-        await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-
-        alert("Bienvenido");
-
+        await signInWithEmailAndPassword(auth, email, password);
       } catch (e) {
-
         alert(e.message);
-
       }
-
     };
 
     window.logout = async () => {
-
+      if (unsubscribeListener) unsubscribeListener();
       await signOut(auth);
-
     };
 
-    onAuthStateChanged(auth, (user) => {
+    // ---- Firestore helpers exposed globally ----
 
+    // Guardar un registro en Firestore
+    window.fsGuardarRegistro = async (uid, reg) => {
+      setSyncStatus("syncing");
+      try {
+        const ref = doc(db, "usuarios", uid, "registros", reg.dia);
+        await setDoc(ref, reg);
+        setSyncStatus("synced");
+        return true;
+      } catch (e) {
+        console.error("Error guardando:", e);
+        setSyncStatus("error", e.message);
+        return false;
+      }
+    };
+
+    // Eliminar un registro
+    window.fsEliminarRegistro = async (uid, dia) => {
+      setSyncStatus("syncing");
+      try {
+        await deleteDoc(doc(db, "usuarios", uid, "registros", dia));
+        setSyncStatus("synced");
+      } catch (e) {
+        setSyncStatus("error", e.message);
+      }
+    };
+
+    // Borrar todos los registros
+    window.fsBorrarTodo = async (uid, dias) => {
+      setSyncStatus("syncing");
+      try {
+        await Promise.all(dias.map(dia =>
+          deleteDoc(doc(db, "usuarios", uid, "registros", dia))
+        ));
+        setSyncStatus("synced");
+      } catch (e) {
+        setSyncStatus("error", e.message);
+      }
+    };
+
+    // Guardar config (pagoHora)
+    window.fsGuardarConfig = async (uid, pagoHora) => {
+      try {
+        await setDoc(doc(db, "usuarios", uid, "config", "general"), { pagoHora });
+      } catch(e) { console.error(e); }
+    };
+
+    // ---- Auth state ----
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
+        window._uid = user.uid;
 
-        document.getElementById("loginBox")
-          .style.display = "none";
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("app").style.display = "block";
 
-        document.getElementById("app")
-          .style.display = "block";
+        // Cargar config
+        try {
+          const cfgDoc = await getDoc(doc(db, "usuarios", user.uid, "config", "general"));
+          if (cfgDoc.exists()) {
+            const cfg = cfgDoc.data();
+            window._pagoHora = cfg.pagoHora || 60;
+            document.getElementById("horaPago").value = window._pagoHora;
+          }
+        } catch(e) {}
+
+        // Escuchar registros en tiempo real
+        if (unsubscribeListener) unsubscribeListener();
+        setSyncStatus("syncing");
+
+        unsubscribeListener = onSnapshot(
+          collection(db, "usuarios", user.uid, "registros"),
+          (snapshot) => {
+            window.registros = [];
+            snapshot.forEach(docSnap => {
+              window.registros.push(docSnap.data());
+            });
+            // Ordenar por fecha
+            window.registros.sort((a, b) => a.fecha > b.fecha ? 1 : -1);
+            setSyncStatus("synced");
+            // Si la pestaña semana está visible, re-renderizar
+            if (document.getElementById("semana").classList.contains("show")) {
+              renderSemana();
+            }
+          },
+          (error) => {
+            setSyncStatus("error", "Sin conexión");
+          }
+        );
 
       } else {
-
-        document.getElementById("loginBox")
-          .style.display = "block";
-
-        document.getElementById("app")
-          .style.display = "none";
-
+        window._uid = null;
+        document.getElementById("loginBox").style.display = "block";
+        document.getElementById("app").style.display = "none";
       }
-
     });
+
+    function setSyncStatus(state, msg) {
+      const el = document.getElementById("syncStatus");
+      if (!el) return;
+      el.className = "";
+      if (state === "synced") {
+        el.textContent = "☁️ Guardado en la nube";
+        el.classList.add("synced");
+      } else if (state === "syncing") {
+        el.textContent = "⏳ Sincronizando...";
+        el.classList.add("syncing");
+      } else {
+        el.textContent = "⚠️ Error: " + (msg || "Sin conexión");
+        el.classList.add("error");
+      }
+    }
 
   </script>
 
+  <!-- ===== APP LOGIC ===== -->
   <script>
 
-    let registros = JSON.parse(localStorage.getItem("registros")) || [];
+    // registros se gestiona desde Firebase en tiempo real (window.registros)
+    window.registros = [];
+    window._pagoHora = 60;
 
-    let pagoHora = localStorage.getItem("pagoHora") || 60;
+    function getUID() { return window._uid; }
 
-    document.getElementById("horaPago").value = pagoHora;
+    function getPagoHora() {
+      return parseFloat(document.getElementById("horaPago").value) || 60;
+    }
 
     document.getElementById("fecha").value =
       new Date().toISOString().split('T')[0];
 
-    function showTab(tab, e) {
+    if (localStorage.getItem("dark") === "true") {
+      document.body.classList.add("dark");
+    }
 
+    function showTab(tab, e) {
       document.querySelectorAll(".tab")
         .forEach(t => t.classList.remove("active"));
-
       document.querySelectorAll(".section")
         .forEach(s => s.classList.remove("show"));
-
       e.target.classList.add("active");
-
-      document.getElementById(tab)
-        .classList.add("show");
-
+      document.getElementById(tab).classList.add("show");
       if (tab === "semana") {
         renderSemana();
       }
-
     }
 
-    function guardarDia() {
+    async function guardarDia() {
+      const uid = getUID();
+      if (!uid) { alert("No hay sesión activa"); return; }
 
       const dia = document.getElementById("dia").value;
       const fecha = document.getElementById("fecha").value;
@@ -520,51 +633,30 @@
         }
       }
 
-      const reg = {
-        dia,
-        fecha,
-        entrada,
-        salida,
-        comida,
-        prestamo,
-        min
-      };
+      const reg = { dia, fecha, entrada, salida, comida, prestamo, min };
 
-      const idx = registros.findIndex(r => r.dia === dia);
+      const ok = await window.fsGuardarRegistro(uid, reg);
 
-      if (idx >= 0) {
-        registros[idx] = reg;
-      } else {
-        registros.push(reg);
+      if (ok) {
+        document.getElementById("ok").style.display = "block";
+        setTimeout(() => {
+          document.getElementById("ok").style.display = "none";
+          document.getElementById("modo-salida").style.display = "none";
+          document.getElementById("modo-entrada").style.display = "block";
+          document.querySelectorAll(".tab")[1].click();
+        }, 1000);
       }
-
-      localStorage.setItem("registros", JSON.stringify(registros));
-
-      document.getElementById("ok").style.display = "block";
-
-      setTimeout(() => {
-        document.getElementById("ok").style.display = "none";
-        document.getElementById("modo-salida").style.display = "none";
-        document.getElementById("modo-entrada").style.display = "block";
-        document.querySelectorAll(".tab")[1].click();
-      }, 1000);
-
     }
 
     function fmtHoras(min) {
-
       const h = Math.floor(min / 60);
       const m = min % 60;
-
       return `${h}h ${m}min`;
-
     }
 
     function renderSemana() {
-
-      pagoHora = parseFloat(document.getElementById("horaPago").value) || 60;
-
-      localStorage.setItem("pagoHora", pagoHora);
+      const pagoHora = getPagoHora();
+      const registros = window.registros || [];
 
       let totalMin = 0;
       let totalPrestamo = 0;
@@ -577,211 +669,97 @@
       const horas = totalMin / 60;
       const extras = Math.max(horas - 48, 0);
       const normales = Math.min(horas, 48);
-
-      const total =
-        (normales * pagoHora) +
-        (extras * (pagoHora * 2));
-
+      const total = (normales * pagoHora) + (extras * (pagoHora * 2));
       const neto = total - totalPrestamo;
 
       let html = `
+      <div class="statgrid">
+        <div class="stat"><h2>${fmtHoras(totalMin)}</h2><p>Horas</p></div>
+        <div class="stat"><h2>${extras.toFixed(1)}h</h2><p>Extras</p></div>
+        <div class="stat"><h2>$${Math.round(total)}</h2><p>Total</p></div>
+        <div class="stat"><h2>$${Math.round(neto)}</h2><p>Neto</p></div>
+      </div>
+      <div class="card">
+      `;
 
-  <div class="statgrid">
-
-  <div class="stat">
-    <h2>${fmtHoras(totalMin)}</h2>
-    <p>Horas</p>
-  </div>
-
-  <div class="stat">
-    <h2>${extras.toFixed(1)}h</h2>
-    <p>Extras</p>
-  </div>
-
-  <div class="stat">
-    <h2>$${Math.round(total)}</h2>
-    <p>Total</p>
-  </div>
-
-  <div class="stat">
-    <h2>$${Math.round(neto)}</h2>
-    <p>Neto</p>
-  </div>
-
-  </div>
-
-  <div class="card">
-  `;
+      if (registros.length === 0) {
+        html += `<p style="color:var(--text2); text-align:center; padding:20px;">Sin registros esta semana</p>`;
+      }
 
       registros.forEach(r => {
-
         const pago = Math.round((r.min / 60) * pagoHora);
-
         html += `
-
-    <div class="day">
-
-      <div>
-
-        <div class="dayname">${r.dia}</div>
-
-        <div class="dayinfo">
-          📅 ${r.fecha}
-        </div>
-
-        <div class="dayinfo">
-          ${r.entrada || '--:--'} - ${r.salida || 'Pendiente'}
-        </div>
-
-        <div class="dayinfo">
-          Trabajado: ${fmtHoras(r.min)}
-        </div>
-
-        <div class="dayinfo">
-          Comida: ${r.comida}min
-        </div>
-
-      </div>
-
-      <div style="text-align:right;">
-
-        <div class="dayname" style="margin-bottom:5px;">
-          $${pago}
-        </div>
-
-        ${!r.salida ? `
-          <button
-            class="smallbtn"
-            style="background:#10B981; margin-bottom:5px; display:block; width:100%;"
-            onclick="prepararSalida('${r.dia}')">
-            Registrar Salida
-          </button>
-        ` : ''}
-
-        <button
-          class="smallbtn"
-          style="display:block; width:100%;"
-          onclick="eliminarDia('${r.dia}')">
-          Eliminar
-        </button>
-
-      </div>
-
-    </div>
-
-    `;
-
+        <div class="day">
+          <div>
+            <div class="dayname">${r.dia}</div>
+            <div class="dayinfo">📅 ${r.fecha}</div>
+            <div class="dayinfo">${r.entrada || '--:--'} - ${r.salida || 'Pendiente'}</div>
+            <div class="dayinfo">Trabajado: ${fmtHoras(r.min)}</div>
+            <div class="dayinfo">Comida: ${r.comida}min</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="dayname" style="margin-bottom:5px;">$${pago}</div>
+            ${!r.salida ? `
+              <button class="smallbtn" style="background:#10B981; margin-bottom:5px; display:block; width:100%;"
+                onclick="prepararSalida('${r.dia}')">Registrar Salida</button>
+            ` : ''}
+            <button class="smallbtn" style="display:block; width:100%;"
+              onclick="eliminarDia('${r.dia}')">Eliminar</button>
+          </div>
+        </div>`;
       });
 
-      html += `</div>`;
-
-      html += `
-  <button class="btn whatsapp" onclick="compartirWA()">
-    Compartir WhatsApp
-  </button>
-  `;
-
-      html += `
-  <button class="btn pdf" onclick="exportPDF()">
-    Exportar PDF
-  </button>
-  `;
-
-      html += `
-  <button class="btn deletebtn" onclick="borrarTodo()">
-    Borrar Toda la Semana
-  </button>
-  `;
+      html += `</div>
+        <button class="btn whatsapp" onclick="compartirWA()">Compartir WhatsApp</button>
+        <button class="btn pdf" onclick="exportPDF()">Exportar PDF</button>
+        <button class="btn deletebtn" onclick="borrarTodo()">Borrar Toda la Semana</button>
+      `;
 
       document.getElementById("contenidoSemana").innerHTML = html;
-
     }
 
     function compartirWA() {
-
-      let totalMin = 0;
-      let totalPrestamo = 0;
-
-      let txt = '';
-
-      txt += `*Registro semana*\n`;
-      txt += `_Pago por hora: $${pagoHora}_\n\n`;
-
+      const pagoHora = getPagoHora();
+      const registros = window.registros || [];
+      let totalMin = 0, totalPrestamo = 0, txt = '';
+      txt += `*Registro semana*\n_Pago por hora: $${pagoHora}_\n\n`;
       registros.forEach(r => {
-
         totalMin += r.min;
         totalPrestamo += r.prestamo;
-
         const pago = Math.round((r.min / 60) * pagoHora);
-
         txt += `*${r.dia}* — ${r.entrada || '--:--'} a ${r.salida || 'Pendiente'}\n`;
         txt += `Fecha: ${r.fecha}\n`;
         txt += `Trabajado: ${fmtHoras(r.min)} → $${pago}\n`;
-        txt += `Comida: ${r.comida}min\n`;
-        txt += `\n---\n\n`;
-
+        txt += `Comida: ${r.comida}min\n\n---\n\n`;
       });
-
       const horas = totalMin / 60;
       const extras = Math.max(horas - 48, 0);
       const normales = Math.min(horas, 48);
-
-      const total =
-        (normales * pagoHora) +
-        (extras * (pagoHora * 2));
-
+      const total = (normales * pagoHora) + (extras * (pagoHora * 2));
       const neto = total - totalPrestamo;
-
       txt += `*Total horas:* ${fmtHoras(totalMin)}\n`;
       txt += `*Total a cobrar:* $${Math.round(total)}\n`;
       txt += `*Total prestado:* $${Math.round(totalPrestamo)}\n`;
       txt += `*Neto a recibir:* $${Math.round(neto)}`;
-
-      window.open(
-        "https://wa.me/?text=" + encodeURIComponent(txt),
-        "_blank"
-      );
-
+      window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank");
     }
 
     async function exportPDF() {
-
       const { jsPDF } = window.jspdf;
-
       const doc = new jsPDF();
-
+      const registros = window.registros || [];
       let y = 20;
-
       doc.setFontSize(20);
-
       doc.text("Checador Pro", 20, y);
-
       y += 15;
-
       registros.forEach(r => {
-
         doc.setFontSize(12);
-
-        doc.text(
-          `${r.dia} ${r.fecha}`,
-          20,
-          y
-        );
-
+        doc.text(`${r.dia} ${r.fecha}`, 20, y);
         y += 7;
-
-        doc.text(
-          `${r.entrada || '--:--'} a ${r.salida || 'Pendiente'} ${fmtHoras(r.min)}`,
-          20,
-          y
-        );
-
+        doc.text(`${r.entrada || '--:--'} a ${r.salida || 'Pendiente'} ${fmtHoras(r.min)}`, 20, y);
         y += 12;
-
       });
-
       doc.save("registro.pdf");
-
     }
 
     function checarEntrada() {
@@ -789,37 +767,30 @@
       const days = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
       document.getElementById("dia").value = days[now.getDay()];
       document.getElementById("fecha").value = now.toISOString().split('T')[0];
-      
       const hs = String(now.getHours()).padStart(2, '0');
       const ms = String(now.getMinutes()).padStart(2, '0');
       document.getElementById("entrada").value = `${hs}:${ms}`;
       document.getElementById("salida").value = "";
       document.getElementById("comida").value = "0";
       document.getElementById("prestamo").value = "0";
-      
       guardarDia();
-      document.querySelectorAll(".tab")[1].click();
     }
 
     function prepararSalida(diaStr) {
-      const idx = registros.findIndex(r => r.dia === diaStr);
-      if (idx < 0) return;
-      
-      const reg = registros[idx];
+      const registros = window.registros || [];
+      const reg = registros.find(r => r.dia === diaStr);
+      if (!reg) return;
       document.getElementById("dia").value = reg.dia;
       document.getElementById("fecha").value = reg.fecha;
       document.getElementById("entrada").value = reg.entrada;
       document.getElementById("comida").value = reg.comida;
       document.getElementById("prestamo").value = reg.prestamo;
-      
       const now = new Date();
       const hs = String(now.getHours()).padStart(2, '0');
       const ms = String(now.getMinutes()).padStart(2, '0');
       document.getElementById("salida").value = `${hs}:${ms}`;
-      
       document.getElementById("modo-entrada").style.display = "none";
       document.getElementById("modo-salida").style.display = "block";
-      
       document.querySelectorAll(".tab")[0].click();
     }
 
@@ -829,46 +800,32 @@
       document.querySelectorAll(".tab")[1].click();
     }
 
-    function eliminarDia(dia) {
-
-      registros =
-        registros.filter(r => r.dia !== dia);
-
-      localStorage.setItem(
-        "registros",
-        JSON.stringify(registros)
-      );
-
+    async function eliminarDia(dia) {
+      const uid = getUID();
+      if (!uid) return;
+      await window.fsEliminarRegistro(uid, dia);
       renderSemana();
-
     }
 
-    function borrarTodo() {
-
-      registros = [];
-
-      localStorage.setItem(
-        "registros",
-        JSON.stringify(registros)
-      );
-
+    async function borrarTodo() {
+      const uid = getUID();
+      if (!uid) return;
+      const dias = (window.registros || []).map(r => r.dia);
+      await window.fsBorrarTodo(uid, dias);
       renderSemana();
+    }
 
+    async function guardarConfig() {
+      const uid = getUID();
+      const pagoHora = getPagoHora();
+      window._pagoHora = pagoHora;
+      if (uid) await window.fsGuardarConfig(uid, pagoHora);
+      alert("Configuración guardada ✅");
     }
 
     function toggleDark() {
-
       document.body.classList.toggle("dark");
-
-      localStorage.setItem(
-        "dark",
-        document.body.classList.contains("dark")
-      );
-
-    }
-
-    if (localStorage.getItem("dark") === "true") {
-      document.body.classList.add("dark");
+      localStorage.setItem("dark", document.body.classList.contains("dark"));
     }
 
   </script>
