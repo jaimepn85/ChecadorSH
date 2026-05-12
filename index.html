@@ -11,11 +11,11 @@
   <style>
     :root {
       --primary: #781281;
-      --bg: #acb9bf;
-      --card:#acb9bf;
-      --text:#7b3b4b;
-      --text2:#7b3b4b;
-      --border: #7b3b4b;
+      --bg: #ece6e6;
+      --card:  #ece6e6;
+      --text:  #176771;
+      --text2: #176771;
+      --border: #176771;
     }
 
     * {
@@ -25,16 +25,16 @@
     }
 
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif, sans-serif;
       background: var(--bg);
       padding: 20px;
     }
 
     body.dark {
-      --bg:#7b3b4b;
-      --card:#7b3b4b;
-      --text:#acb9bf;
-      --text2: #acb9bf;
+      --bg: #176771;
+      --card:  #176771;
+      --text: #ece6e6;
+      --text2: #ece6e6;
       --border: #ece6e6;
     }
 
@@ -95,8 +95,9 @@
     }
 
     .primary {
-      background: #f5e7d5;
-      color: #212844;
+      background:  white;
+      
+      
     }
 
     .whatsapp {
@@ -284,7 +285,7 @@
 <body>
 
   <!-- Loading overlay -->
-  <div id="loadingOverlay"><span>⏳ Cargando...</span></div>
+  <div id="loadingOverlay"><span><img width="48" height="48" src="https://img.icons8.com/fluency/48/loading--v1.png" alt="loading--v1"/> Cargando...</span></div>
 
   <div id="loginBox" class="container">
 
@@ -334,8 +335,8 @@
 
         <div class="card" id="modo-entrada">
           <h2 style="text-align:center; margin-bottom:15px; color:var(--text);">¡Bienvenido!</h2>
-          <button class="btn primary" style="padding:20px; font-size:18px;" onclick="checarEntrada()">
-           Registrar Entrada Ahora <img width="45" height="45" src="https://img.icons8.com/glyph-neue/64/checked-user-male.png" alt="checked-user-male"/> 
+          <button class="btn primary" color: white; style="padding:20px; font-size:18px;" onclick="checarEntrada()">
+           Registrar Entrada Ahora <br><img width="40" height="40" src="https://img.icons8.com/glyph-neue/64/checked-user-male.png" alt="checked-user-male"/> 
           </button>
         </div>
 
