@@ -10,12 +10,12 @@
 
   <style>
     :root {
-      --primary: #534AB7;
-      --bg: #F3F4F6;
-      --card: #FFFFFF;
-      --text: #111827;
-      --text2: #6B7280;
-      --border: #E5E7EB;
+      --primary: #781281;
+      --bg: #f5e7d5;
+      --card: #f5e7d5;
+      --text: #212844;
+      --text2: #212844;
+      --border: #212844;
     }
 
     * {
@@ -31,11 +31,11 @@
     }
 
     body.dark {
-      --bg: #111827;
-      --card: #1F2937;
-      --text: #F9FAFB;
-      --text2: #D1D5DB;
-      --border: #374151;
+      --bg: #212844;
+      --card: #212844;
+      --text: #f5e7d5;
+      --text2: #f5e7d5;
+      --border: #f5e7d5;
     }
 
     .container {
@@ -45,10 +45,10 @@
 
     .card {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 18px;
-      margin-bottom: 15px;
+      border: 5px solid var(--border);
+      border-radius: 20px;
+      padding:16px;
+      margin-bottom: 100px;
     }
 
     h1 {
@@ -95,12 +95,12 @@
     }
 
     .primary {
-      background: #534AB7;
-      color: white;
+      background: #f5e7d5;
+      color: #212844;
     }
 
     .whatsapp {
-      background: #25D366;
+      background: #0a633e;
       color: white;
     }
 
@@ -166,8 +166,8 @@
     }
 
     .tab.active {
-      background: #534AB7;
-      color: white;
+      background: #aedd2e;
+      color: #212844;
     }
 
     .section {
@@ -248,7 +248,7 @@
     #loadingOverlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.4);
+      background: rgba(73, 124, 219, 0.993);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -264,7 +264,7 @@
       font-size: 16px;
     }
     body.dark #loadingOverlay span {
-      background: #1F2937;
+      background: #24569c;
       color: #a5b4fc;
     }
 
@@ -319,8 +319,8 @@
           <div id="syncStatus">⏳ Iniciando...</div>
         </div>
         <div style="display:flex; gap:8px;">
-          <button class="iconbtn" onclick="toggleDark()" title="Alternar Tema Oscuro">🌙</button>
-          <button class="iconbtn logoutbtn" onclick="logout()" title="Cerrar Sesión">🚪</button>
+          <button class="iconbtn" onclick="toggleDark()" title="Alternar Tema Oscuro"><img width="45" height="45" src="https://img.icons8.com/matisse/100/day-and-night.png" alt="day-and-night"/></button>
+          <button class="iconbtn logoutbtn" onclick="logout()" title="Cerrar Sesión"><img width="50" height="50" src="https://img.icons8.com/ios-filled/50/logout-rounded-up.png" alt="logout-rounded-up"/></button>
         </div>
       </div>
 
@@ -335,7 +335,7 @@
         <div class="card" id="modo-entrada">
           <h2 style="text-align:center; margin-bottom:15px; color:var(--text);">¡Bienvenido!</h2>
           <button class="btn primary" style="padding:20px; font-size:18px;" onclick="checarEntrada()">
-            📍 Registrar Entrada Ahora
+           Registrar Entrada Ahora <img width="45" height="45" src="https://img.icons8.com/glyph-neue/64/checked-user-male.png" alt="checked-user-male"/> 
           </button>
         </div>
 
@@ -362,7 +362,7 @@
           <label>Préstamo</label>
           <input type="number" id="prestamo" value="0">
 
-          <button class="btn whatsapp" style="background-color:#10B981;" onclick="guardarDia()">
+          <button class="btn whatsapp" style="background-color:#0a633e;" onclick="guardarDia()">
             🏁 Guardar Salida y Cerrar Día
           </button>
           
@@ -700,7 +700,7 @@
           <div style="text-align:right;">
             <div class="dayname" style="margin-bottom:5px;">$${pago}</div>
             ${!r.salida ? `
-              <button class="smallbtn" style="background:#10B981; margin-bottom:5px; display:block; width:100%;"
+              <button class="smallbtn" style="background:#0a633e; margin-bottom:5px; display:block; width:100%;"
                 onclick="prepararSalida('${r.dia}')">Registrar Salida</button>
             ` : ''}
             <button class="smallbtn" style="display:block; width:100%;"
