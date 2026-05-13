@@ -249,6 +249,37 @@
       display: none;
     }
 
+    /* ===== HISTORIAL ===== */
+    .hist-semana { margin-bottom: 28px; }
+    .hist-titulo {
+      font-weight: bold;
+      color: var(--text);
+      font-size: 14px;
+      padding: 10px 14px;
+      background: var(--card);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      border-left: 4px solid var(--primary);
+    }
+    .badge-cerrado {
+      font-size: 11px;
+      background: rgba(74,127,167,0.20);
+      color: #B3CFE5;
+      padding: 2px 7px;
+      border-radius: 6px;
+      margin-left: 6px;
+      font-weight: normal;
+    }
+    .badge-pendiente {
+      font-size: 11px;
+      background: rgba(249,177,50,0.15);
+      color: #f0c070;
+      padding: 2px 7px;
+      border-radius: 6px;
+      margin-left: 6px;
+      font-weight: normal;
+    }
+
     /* ===== ESTILOS LOGIN (estilo basic) ===== */
     #loginBox {
       position: fixed;
@@ -467,24 +498,22 @@
       <div class="tabs">
         <button class="tab active" onclick="showTab('registro',event)">Registrar</button>
         <button class="tab" onclick="showTab('semana',event)">Semana</button>
+        <button class="tab" onclick="showTab('historial',event)">Historial</button>
         <button class="tab" onclick="showTab('config',event)">Config</button>
       </div>
 
       <div class="section show" id="registro">
-
         <div class="card" id="modo-entrada">
           <h2 style="text-align:center; margin-bottom:15px; color:var(--text);">¡Bienvenido!</h2>
-          <button class="btn primary" color: white; style="padding:20px; font-size:18px;" onclick="checarEntrada()">
-           Registrar Entrada Ahora <br><img width="40" height="40" src="https://img.icons8.com/glyph-neue/64/checked-user-male.png" alt="checked-user-male"/> 
+          <button class="btn primary" style="padding:20px; font-size:18px;" onclick="checarEntrada()">
+           Registrar Entrada Ahora <br><img width="40" height="40" src="https://img.icons8.com/glyph-neue/64/checked-user-male.png" alt="checked-user-male"/>
           </button>
         </div>
 
         <div class="card" id="modo-salida" style="display:none;">
           <h2 style="margin-bottom:15px; color:var(--text);">Completar Registro</h2>
-          
           <input type="hidden" id="dia">
           <input type="hidden" id="fecha">
-
           <div class="row">
             <div>
               <label>Entrada (Fija)</label>
@@ -495,30 +524,26 @@
               <input type="time" id="salida" value="">
             </div>
           </div>
-
           <label>Comida (minutos)</label>
           <input type="number" id="comida" value="0">
-
           <label>Préstamo</label>
           <input type="number" id="prestamo" value="0">
-
           <button class="btn whatsapp" style="background-color:#0a633e;" onclick="guardarDia()">
             🏁 Guardar Salida y Cerrar Día
           </button>
-          
           <button class="btn" style="background:var(--bg); color:var(--text2); margin-top:10px;" onclick="cancelarSalida()">
             Cancelar
           </button>
-
-          <div class="success" id="ok">
-            Registro guardado ✅
-          </div>
+          <div class="success" id="ok">Registro guardado ✅</div>
         </div>
-
       </div>
 
       <div class="section" id="semana">
         <div id="contenidoSemana"></div>
+      </div>
+
+      <div class="section" id="historial">
+        <div id="contenidoHistorial"></div>
       </div>
 
       <div class="section" id="config">
@@ -605,11 +630,11 @@
 
     // ---- Firestore helpers exposed globally ----
 
-    // Guardar un registro en Firestore
+    // Guardar un registro en Firestore (ID = fecha YYYY-MM-DD)
     window.fsGuardarRegistro = async (uid, reg) => {
       setSyncStatus("syncing");
       try {
-        const ref = doc(db, "usuarios", uid, "registros", reg.dia);
+        const ref = doc(db, "usuarios", uid, "registros", reg.fecha);
         await setDoc(ref, reg);
         setSyncStatus("synced");
         return true;
@@ -620,23 +645,23 @@
       }
     };
 
-    // Eliminar un registro
-    window.fsEliminarRegistro = async (uid, dia) => {
+    // Eliminar un registro por fecha
+    window.fsEliminarRegistro = async (uid, fecha) => {
       setSyncStatus("syncing");
       try {
-        await deleteDoc(doc(db, "usuarios", uid, "registros", dia));
+        await deleteDoc(doc(db, "usuarios", uid, "registros", fecha));
         setSyncStatus("synced");
       } catch (e) {
         setSyncStatus("error", e.message);
       }
     };
 
-    // Borrar todos los registros
-    window.fsBorrarTodo = async (uid, dias) => {
+    // Borrar lista de registros por fecha
+    window.fsBorrarTodo = async (uid, fechas) => {
       setSyncStatus("syncing");
       try {
-        await Promise.all(dias.map(dia =>
-          deleteDoc(doc(db, "usuarios", uid, "registros", dia))
+        await Promise.all(fechas.map(f =>
+          deleteDoc(doc(db, "usuarios", uid, "registros", f))
         ));
         setSyncStatus("synced");
       } catch (e) {
@@ -683,10 +708,8 @@
             // Ordenar por fecha
             window.registros.sort((a, b) => a.fecha > b.fecha ? 1 : -1);
             setSyncStatus("synced");
-            // Si la pestaña semana está visible, re-renderizar
-            if (document.getElementById("semana").classList.contains("show")) {
-              renderSemana();
-            }
+            if (document.getElementById("semana").classList.contains("show")) renderSemana();
+            if (document.getElementById("historial").classList.contains("show")) renderHistorial();
           },
           (error) => {
             setSyncStatus("error", "Sin conexión");
@@ -721,34 +744,72 @@
   <!-- ===== APP LOGIC ===== -->
   <script>
 
-    // registros se gestiona desde Firebase en tiempo real (window.registros)
     window.registros = [];
     window._pagoHora = 60;
 
     function getUID() { return window._uid; }
-
     function getPagoHora() {
       return parseFloat(document.getElementById("horaPago").value) || 60;
     }
 
-    document.getElementById("fecha").value =
-      new Date().toISOString().split('T')[0];
+    document.getElementById("fecha").value = new Date().toISOString().split('T')[0];
 
     if (localStorage.getItem("dark") === "true") {
       document.body.classList.add("dark");
     }
 
+    // ===== UTILIDADES DE SEMANA =====
+
+    function getLunesDeEstaSemana() {
+      const now = new Date();
+      const day = now.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + diff);
+      monday.setHours(0, 0, 0, 0);
+      return monday;
+    }
+
+    function getFechasDeEstaSemana() {
+      const lunes = getLunesDeEstaSemana();
+      const set = new Set();
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(lunes);
+        d.setDate(lunes.getDate() + i);
+        set.add(d.toISOString().split('T')[0]);
+      }
+      return set;
+    }
+
+    function getLunesDeFecha(fechaStr) {
+      const d = new Date(fechaStr + 'T12:00:00');
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + diff);
+      return monday.toISOString().split('T')[0];
+    }
+
+    function getLabelSemana(lunesStr) {
+      const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      const d = new Date(lunesStr + 'T12:00:00');
+      const domingo = new Date(d);
+      domingo.setDate(d.getDate() + 6);
+      return `Semana ${d.getDate()} ${meses[d.getMonth()]} — ${domingo.getDate()} ${meses[domingo.getMonth()]} ${domingo.getFullYear()}`;
+    }
+
+    // ===== NAVEGACIÓN =====
+
     function showTab(tab, e) {
-      document.querySelectorAll(".tab")
-        .forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".section")
-        .forEach(s => s.classList.remove("show"));
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".section").forEach(s => s.classList.remove("show"));
       e.target.classList.add("active");
       document.getElementById(tab).classList.add("show");
-      if (tab === "semana") {
-        renderSemana();
-      }
+      if (tab === "semana") renderSemana();
+      if (tab === "historial") renderHistorial();
     }
+
+    // ===== GUARDAR DÍA =====
 
     async function guardarDia() {
       const uid = getUID();
@@ -765,16 +826,11 @@
       if (entrada && salida) {
         const [eh, em] = entrada.split(":").map(Number);
         const [sh, sm] = salida.split(":").map(Number);
-        min = ((sh * 60) + sm) - ((eh * 60) + em);
-        min -= comida;
-        if (min < 0) {
-          alert("Horario inválido");
-          return;
-        }
+        min = ((sh * 60) + sm) - ((eh * 60) + em) - comida;
+        if (min < 0) { alert("Horario inválido"); return; }
       }
 
       const reg = { dia, fecha, entrada, salida, comida, prestamo, min };
-
       const ok = await window.fsGuardarRegistro(uid, reg);
 
       if (ok) {
@@ -794,17 +850,15 @@
       return `${h}h ${m}min`;
     }
 
+    // ===== RENDER SEMANA ACTUAL =====
+
     function renderSemana() {
       const pagoHora = getPagoHora();
-      const registros = window.registros || [];
+      const semanaFechas = getFechasDeEstaSemana();
+      const registros = (window.registros || []).filter(r => r.fecha && semanaFechas.has(r.fecha));
 
-      let totalMin = 0;
-      let totalPrestamo = 0;
-
-      registros.forEach(r => {
-        totalMin += r.min;
-        totalPrestamo += r.prestamo;
-      });
+      let totalMin = 0, totalPrestamo = 0;
+      registros.forEach(r => { totalMin += (r.min||0); totalPrestamo += (r.prestamo||0); });
 
       const horas = totalMin / 60;
       const extras = Math.max(horas - 48, 0);
@@ -819,32 +873,34 @@
         <div class="stat"><h2>$${Math.round(total)}</h2><p>Total</p></div>
         <div class="stat"><h2>$${Math.round(neto)}</h2><p>Neto</p></div>
       </div>
-      <div class="card">
-      `;
+      <div class="card">`;
 
       if (registros.length === 0) {
         html += `<p style="color:var(--text2); text-align:center; padding:20px;">Sin registros esta semana</p>`;
       }
 
       registros.forEach(r => {
-        const pago = Math.round((r.min / 60) * pagoHora);
+        const pago = Math.round(((r.min||0) / 60) * pagoHora);
+        const cerrado = !!r.salida;
         html += `
         <div class="day">
           <div>
-            <div class="dayname">${r.dia}</div>
+            <div class="dayname">${r.dia}
+              ${cerrado
+                ? '<span class="badge-cerrado">🔒 Cerrado</span>'
+                : '<span class="badge-pendiente">⏳ Pendiente</span>'}
+            </div>
             <div class="dayinfo">📅 ${r.fecha}</div>
-            <div class="dayinfo">${r.entrada || '--:--'} - ${r.salida || 'Pendiente'}</div>
-            <div class="dayinfo">Trabajado: ${fmtHoras(r.min)}</div>
-            <div class="dayinfo">Comida: ${r.comida}min</div>
+            <div class="dayinfo">${r.entrada||'--:--'} → ${r.salida||'Sin salida'}</div>
+            <div class="dayinfo">Trabajado: ${fmtHoras(r.min||0)}</div>
+            <div class="dayinfo">Comida: ${r.comida}min${r.prestamo>0?' · Préstamo: $'+r.prestamo:''}</div>
           </div>
           <div style="text-align:right;">
             <div class="dayname" style="margin-bottom:5px;">$${pago}</div>
-            ${!r.salida ? `
-              <button class="smallbtn" style="background:#0a633e; margin-bottom:5px; display:block; width:100%;"
-                onclick="prepararSalida('${r.dia}')">Registrar Salida</button>
-            ` : ''}
+            ${!cerrado ? `<button class="smallbtn" style="background:#0a633e; margin-bottom:5px; display:block; width:100%;"
+              onclick="prepararSalida('${r.fecha}')">Registrar Salida</button>` : ''}
             <button class="smallbtn" style="display:block; width:100%;"
-              onclick="eliminarDia('${r.dia}')">Eliminar</button>
+              onclick="eliminarDia('${r.fecha}','${r.dia}')">Eliminar</button>
           </div>
         </div>`;
       });
@@ -852,68 +908,129 @@
       html += `</div>
         <button class="btn whatsapp" onclick="compartirWA()">Compartir WhatsApp</button>
         <button class="btn pdf" onclick="exportPDF()">Exportar PDF</button>
-        <button class="btn deletebtn" onclick="borrarTodo()">Borrar Toda la Semana</button>
-      `;
+        <button class="btn deletebtn" onclick="borrarTodo()">Borrar Semana Actual</button>`;
 
       document.getElementById("contenidoSemana").innerHTML = html;
     }
 
+    // ===== RENDER HISTORIAL =====
+
+    function renderHistorial() {
+      const pagoHora = getPagoHora();
+      const semanaFechas = getFechasDeEstaSemana();
+      const historicos = (window.registros || []).filter(r => r.fecha && !semanaFechas.has(r.fecha));
+
+      if (historicos.length === 0) {
+        document.getElementById('contenidoHistorial').innerHTML =
+          `<div class="card" style="text-align:center; padding:30px; margin-bottom:20px;">
+            <p style="color:var(--text2); font-size:15px;">📋 No hay semanas anteriores registradas</p>
+          </div>`;
+        return;
+      }
+
+      const semanas = {};
+      historicos.forEach(r => {
+        const lunes = getLunesDeFecha(r.fecha);
+        if (!semanas[lunes]) semanas[lunes] = [];
+        semanas[lunes].push(r);
+      });
+
+      const lunesKeys = Object.keys(semanas).sort().reverse();
+      let html = '';
+
+      lunesKeys.forEach(lunesStr => {
+        const regs = semanas[lunesStr].sort((a, b) => a.fecha > b.fecha ? 1 : -1);
+        let totalMin = 0, totalPrestamo = 0;
+        regs.forEach(r => { totalMin += (r.min||0); totalPrestamo += (r.prestamo||0); });
+        const horas = totalMin / 60;
+        const extras = Math.max(horas - 48, 0);
+        const normales = Math.min(horas, 48);
+        const total = (normales * pagoHora) + (extras * (pagoHora * 2));
+        const neto = total - totalPrestamo;
+
+        html += `<div class="hist-semana">
+          <div class="hist-titulo">📅 ${getLabelSemana(lunesStr)}</div>
+          <div class="statgrid" style="margin-bottom:10px;">
+            <div class="stat"><h2>${fmtHoras(totalMin)}</h2><p>Horas</p></div>
+            <div class="stat"><h2>$${Math.round(neto)}</h2><p>Neto</p></div>
+          </div>
+          <div class="card" style="margin-bottom:10px;">`;
+
+        regs.forEach(r => {
+          const pago = Math.round(((r.min||0) / 60) * pagoHora);
+          html += `
+          <div class="day">
+            <div>
+              <div class="dayname">${r.dia} <span class="badge-cerrado">🔒 Histórico</span></div>
+              <div class="dayinfo">📅 ${r.fecha}</div>
+              <div class="dayinfo">${r.entrada||'--:--'} → ${r.salida||'Sin salida'}</div>
+              <div class="dayinfo">Trabajado: ${fmtHoras(r.min||0)}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="dayname">$${pago}</div>
+            </div>
+          </div>`;
+        });
+
+        html += `</div></div>`;
+      });
+
+      document.getElementById('contenidoHistorial').innerHTML = html;
+    }
+
+    // ===== COMPARTIR / EXPORTAR (solo semana actual) =====
+
     function compartirWA() {
       const pagoHora = getPagoHora();
-      const registros = window.registros || [];
+      const semanaFechas = getFechasDeEstaSemana();
+      const registros = (window.registros || []).filter(r => r.fecha && semanaFechas.has(r.fecha));
       let totalMin = 0, totalPrestamo = 0, txt = '';
       txt += `*Registro semana*\n_Pago por hora: $${pagoHora}_\n\n`;
       registros.forEach(r => {
-        totalMin += r.min;
-        totalPrestamo += r.prestamo;
-        const pago = Math.round((r.min / 60) * pagoHora);
-        txt += `*${r.dia}* — ${r.entrada || '--:--'} a ${r.salida || 'Pendiente'}\n`;
-        txt += `Fecha: ${r.fecha}\n`;
-        txt += `Trabajado: ${fmtHoras(r.min)} → $${pago}\n`;
-        txt += `Comida: ${r.comida}min\n\n---\n\n`;
+        totalMin += (r.min||0); totalPrestamo += (r.prestamo||0);
+        const pago = Math.round(((r.min||0) / 60) * pagoHora);
+        txt += `*${r.dia}* — ${r.entrada||'--:--'} a ${r.salida||'Pendiente'}\n`;
+        txt += `Fecha: ${r.fecha}\nTrabajado: ${fmtHoras(r.min||0)} → $${pago}\nComida: ${r.comida}min\n\n---\n\n`;
       });
       const horas = totalMin / 60;
       const extras = Math.max(horas - 48, 0);
       const normales = Math.min(horas, 48);
       const total = (normales * pagoHora) + (extras * (pagoHora * 2));
       const neto = total - totalPrestamo;
-      txt += `*Total horas:* ${fmtHoras(totalMin)}\n`;
-      txt += `*Total a cobrar:* $${Math.round(total)}\n`;
-      txt += `*Total prestado:* $${Math.round(totalPrestamo)}\n`;
-      txt += `*Neto a recibir:* $${Math.round(neto)}`;
+      txt += `*Total horas:* ${fmtHoras(totalMin)}\n*Total a cobrar:* $${Math.round(total)}\n*Total prestado:* $${Math.round(totalPrestamo)}\n*Neto a recibir:* $${Math.round(neto)}`;
       window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank");
     }
 
     async function exportPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      const registros = window.registros || [];
+      const semanaFechas = getFechasDeEstaSemana();
+      const registros = (window.registros || []).filter(r => r.fecha && semanaFechas.has(r.fecha));
       let y = 20;
-      doc.setFontSize(20);
-      doc.text("Checador Pro", 20, y);
-      y += 15;
+      doc.setFontSize(18); doc.text("Checador SH — Semana actual", 20, y); y += 14;
       registros.forEach(r => {
         doc.setFontSize(12);
-        doc.text(`${r.dia} ${r.fecha}`, 20, y);
-        y += 7;
-        doc.text(`${r.entrada || '--:--'} a ${r.salida || 'Pendiente'} ${fmtHoras(r.min)}`, 20, y);
-        y += 12;
+        doc.text(`${r.dia} ${r.fecha}`, 20, y); y += 7;
+        doc.text(`${r.entrada||'--:--'} a ${r.salida||'Pendiente'} — ${fmtHoras(r.min||0)}`, 20, y); y += 12;
       });
       doc.save("registro.pdf");
     }
+
+    // ===== CHECAR ENTRADA =====
 
     function checarEntrada() {
       const now = new Date();
       const days = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
       const diaAct = days[now.getDay()];
       const fechaAct = now.toISOString().split('T')[0];
-
-      // Verificamos si ya existe un registro de entrada para la fecha actual
-      const registros = window.registros || [];
-      const yaRegistrado = registros.find(r => r.dia === diaAct && r.fecha === fechaAct);
+      const yaRegistrado = (window.registros || []).find(r => r.fecha === fechaAct);
 
       if (yaRegistrado) {
-        alert("⚠️ Ya has registrado tu entrada el día de hoy. No es posible crear otra.");
+        if (yaRegistrado.salida) {
+          alert("🔒 El día de hoy ya fue cerrado. No es posible modificarlo.");
+        } else {
+          alert("⚠️ Ya registraste tu entrada hoy. Usa 'Registrar Salida' en la pestaña Semana.");
+        }
         return;
       }
 
@@ -928,10 +1045,12 @@
       guardarDia();
     }
 
-    function prepararSalida(diaStr) {
-      const registros = window.registros || [];
-      const reg = registros.find(r => r.dia === diaStr);
+    // ===== PREPARAR SALIDA (usa fecha como ID) =====
+
+    function prepararSalida(fechaStr) {
+      const reg = (window.registros || []).find(r => r.fecha === fechaStr);
       if (!reg) return;
+      if (reg.salida) { alert("🔒 Este día ya fue cerrado. No se puede modificar."); return; }
       document.getElementById("dia").value = reg.dia;
       document.getElementById("fecha").value = reg.fecha;
       document.getElementById("entrada").value = reg.entrada;
@@ -952,18 +1071,26 @@
       document.querySelectorAll(".tab")[1].click();
     }
 
-    async function eliminarDia(dia) {
+    // ===== ELIMINAR CON CONFIRMACIÓN =====
+
+    async function eliminarDia(fecha, dia) {
       const uid = getUID();
       if (!uid) return;
-      await window.fsEliminarRegistro(uid, dia);
+      if (!confirm(`⚠️ ¿Eliminar el registro del ${dia} (${fecha})?\nEsta acción no se puede deshacer.`)) return;
+      await window.fsEliminarRegistro(uid, fecha);
       renderSemana();
     }
 
     async function borrarTodo() {
       const uid = getUID();
       if (!uid) return;
-      const dias = (window.registros || []).map(r => r.dia);
-      await window.fsBorrarTodo(uid, dias);
+      const semanaFechas = getFechasDeEstaSemana();
+      const fechas = (window.registros || [])
+        .filter(r => r.fecha && semanaFechas.has(r.fecha))
+        .map(r => r.fecha);
+      if (fechas.length === 0) { alert("No hay registros en la semana actual."); return; }
+      if (!confirm(`⚠️ ¿Borrar todos los ${fechas.length} registro(s) de la semana actual?\nEsta acción no se puede deshacer.`)) return;
+      await window.fsBorrarTodo(uid, fechas);
       renderSemana();
     }
 
