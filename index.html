@@ -703,7 +703,8 @@
           (snapshot) => {
             window.registros = [];
             snapshot.forEach(docSnap => {
-              window.registros.push(docSnap.data());
+              // Guardamos el ID del documento para distinguir formato nuevo (fecha) vs viejo (nombre día)
+              window.registros.push({ ...docSnap.data(), _id: docSnap.id });
             });
             // Ordenar por fecha
             window.registros.sort((a, b) => a.fecha > b.fecha ? 1 : -1);
@@ -1023,7 +1024,10 @@
       const days = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
       const diaAct = days[now.getDay()];
       const fechaAct = now.toISOString().split('T')[0];
-      const yaRegistrado = (window.registros || []).find(r => r.fecha === fechaAct);
+
+      // Solo buscar registros con ID en formato YYYY-MM-DD (nuevo formato)
+      // Los registros viejos tienen _id = nombre de día ("Lunes", etc.) y se ignoran
+      const yaRegistrado = (window.registros || []).find(r => r._id === fechaAct);
 
       if (yaRegistrado) {
         if (yaRegistrado.salida) {
@@ -1048,7 +1052,7 @@
     // ===== PREPARAR SALIDA (usa fecha como ID) =====
 
     function prepararSalida(fechaStr) {
-      const reg = (window.registros || []).find(r => r.fecha === fechaStr);
+      const reg = (window.registros || []).find(r => r._id === fechaStr || r.fecha === fechaStr);
       if (!reg) return;
       if (reg.salida) { alert("🔒 Este día ya fue cerrado. No se puede modificar."); return; }
       document.getElementById("dia").value = reg.dia;
