@@ -920,8 +920,8 @@
       });
 
       html += `</div>
-        <button class="btn whatsapp" onclick="compartirWA()">Compartir WhatsApp (Hoy)</button>
-        <button class="btn pdf" onclick="exportPDF()">Exportar PDF (Hoy)</button>
+        <button class="btn whatsapp" onclick="compartirWA()">Compartir WhatsApp (Semana)</button>
+        <button class="btn pdf" onclick="exportPDF()">Exportar PDF (Semana)</button>
         <button class="btn deletebtn" onclick="borrarTodo()">Borrar Todos los de Hoy</button>`;
 
       document.getElementById("contenidoSemana").innerHTML = html;
@@ -1002,14 +1002,14 @@
       document.getElementById('contenidoHistorial').innerHTML = html;
     }
 
-    // ===== COMPARTIR / EXPORTAR (solo hoy) =====
+    // ===== COMPARTIR / EXPORTAR (Semana actual completa) =====
 
     function compartirWA() {
       const pagoHora = getPagoHora();
-      const fechaAct = new Date().toISOString().split('T')[0];
-      const registros = (window.registros || []).filter(r => r.fecha === fechaAct);
+      const semanaFechas = getFechasDeEstaSemana();
+      const registros = (window.registros || []).filter(r => r.fecha && semanaFechas.has(r.fecha));
       let totalMin = 0, totalPrestamo = 0, txt = '';
-      txt += `*Registro del Día (${fechaAct})*\n_Pago por hora: $${pagoHora}_\n\n`;
+      txt += `*Registro de la Semana*\n_Pago por hora: $${pagoHora}_\n\n`;
       registros.forEach(r => {
         totalMin += (r.min||0); totalPrestamo += (r.prestamo||0);
         const pago = Math.round(((r.min||0) / 60) * pagoHora);
@@ -1028,10 +1028,10 @@
     async function exportPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      const fechaAct = new Date().toISOString().split('T')[0];
-      const registros = (window.registros || []).filter(r => r.fecha === fechaAct);
+      const semanaFechas = getFechasDeEstaSemana();
+      const registros = (window.registros || []).filter(r => r.fecha && semanaFechas.has(r.fecha));
       let y = 20;
-      doc.setFontSize(18); doc.text(`Checador SH — ${fechaAct}`, 20, y); y += 14;
+      doc.setFontSize(18); doc.text(`Checador SH — Semana Actual`, 20, y); y += 14;
       registros.forEach(r => {
         doc.setFontSize(12);
         doc.text(`${r.dia} ${r.fecha}`, 20, y); y += 7;
